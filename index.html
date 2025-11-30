@@ -43,7 +43,7 @@
       margin-bottom: 10px;
     }
 
-    /* BANNER — UPDATED SIZE AND WEIGHT */
+    /* BANNER */
     .banner {
       margin-bottom: 18px;
       padding: 12px 16px;
@@ -256,23 +256,30 @@
   </div>
 
   <script>
-    /* ------- Same JS logic as previous version ------- */
-    /* The only update needed was CSS; logic remains identical */
+    // ======================================
+    // 1. DYNAMIC BOSSES
+    // ======================================
 
     const bosses = [
-      { id: "venatus",  name: "Venatus", hoursAfterRespawn: 10 },
-      { id: "viorent",  name: "Viorent", hoursAfterRespawn: 10 },
-      { id: "ego",      name: "Ego",     hoursAfterRespawn: 21 },
+      { id: "venatus",  name: "Venatus",          hoursAfterRespawn: 10 },
+      { id: "viorent",  name: "Viorent",          hoursAfterRespawn: 10 },
+      { id: "ego",      name: "Ego",              hoursAfterRespawn: 21 },
 
-      { id: "livera",   name: "Livera",  hoursAfterRespawn: 24 },
-      { id: "araneo",   name: "Araneo",  hoursAfterRespawn: 24 },
-      { id: "undomiel", name: "Undomiel",hoursAfterRespawn: 24 },
+      { id: "livera",   name: "Livera",           hoursAfterRespawn: 24 },
+      { id: "araneo",   name: "Araneo",           hoursAfterRespawn: 24 },
+      { id: "undomiel", name: "Undomiel",         hoursAfterRespawn: 24 },
 
-      { id: "ladydalia", name: "Lady Dalia", hoursAfterRespawn: 18 },
-      { id: "amentis",   name: "Amentis",    hoursAfterRespawn: 29 },
+      { id: "ladydalia", name: "Lady Dalia",      hoursAfterRespawn: 18 },
+      { id: "amentis",   name: "Amentis",         hoursAfterRespawn: 29 },
       { id: "aquleus",   name: "General Aquleus", hoursAfterRespawn: 29 },
 
-      { id: "baronbraudmore", name: "Baron Braudmore", hoursAfterRespawn: 32 }
+      { id: "baronbraudmore", name: "Baron Braudmore", hoursAfterRespawn: 32 },
+
+      // New bosses with unknown death times
+      { id: "wannitas", name: "Wannitas",         hoursAfterRespawn: 48 },
+      { id: "metus",    name: "Metus",            hoursAfterRespawn: 48 },
+      { id: "duplican", name: "Duplican",         hoursAfterRespawn: 48 },
+      { id: "shuliar",  name: "Shuliar",          hoursAfterRespawn: 35 }
     ];
 
     const defaultDeathTimes = {
@@ -286,19 +293,32 @@
       viorent:"2025-11-30T15:10:00",
       ego:"2025-11-30T07:06:00",
       baronbraudmore:"2025-12-01T05:18:00"
+      // note: no defaults for Wannitas / Metus / Duplican / Shuliar
     };
 
     bosses.forEach(b => {
       const stored = localStorage.getItem("bossTimer_death_" + b.id);
-      b.deathTime = stored ? new Date(stored) : defaultDeathTimes[b.id] ? new Date(defaultDeathTimes[b.id]) : null;
+      b.deathTime = stored
+        ? new Date(stored)
+        : defaultDeathTimes[b.id]
+        ? new Date(defaultDeathTimes[b.id])
+        : null;
     });
+
+    // ======================================
+    // 2. FIXED SCHEDULE BOSSES
+    // ======================================
 
     const fixedBosses = [
       { name:"Clemantis", slots:[{day:1,hour:11,minute:30},{day:4,hour:19,minute:0}] },
-      { name:"Saphirus", slots:[{day:0,hour:17,minute:0},{day:2,hour:11,minute:30}] },
-      { name:"Neutro", slots:[{day:2,hour:19,minute:0},{day:4,hour:11,minute:30}] },
-      { name:"Thymele", slots:[{day:1,hour:19,minute:0},{day:3,hour:11,minute:30}] }
+      { name:"Saphirus",  slots:[{day:0,hour:17,minute:0},{day:2,hour:11,minute:30}] },
+      { name:"Neutro",    slots:[{day:2,hour:19,minute:0},{day:4,hour:11,minute:30}] },
+      { name:"Thymele",   slots:[{day:1,hour:19,minute:0},{day:3,hour:11,minute:30}] }
     ];
+
+    // ======================================
+    // HELPERS
+    // ======================================
 
     function formatCountdown(ms) {
       if (ms <= 0) return "Spawning now";
@@ -349,6 +369,7 @@
       let globalNext=null;
       let globalBossName=null;
 
+      // dynamic
       const dynList=bosses.map(b=>{
         let next=null;
         if(b.deathTime){
@@ -407,6 +428,7 @@
         tbody.appendChild(tr);
       });
 
+      // fixed
       const fixedList=fixedBosses.map(b=>{
         const nextSpawn=nextWeeklySpawn(b.slots,now);
         return {boss:b,nextSpawn};
@@ -443,6 +465,7 @@
         }
       });
 
+      // banner
       if(!globalNext){
         bannerEl.innerHTML=`<span>No upcoming spawns detected.</span>`;
       } else {
