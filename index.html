@@ -221,6 +221,14 @@
       text-align: center;
     }
 
+    /* Row highlights based on "Head to Boss Area" timer */
+    .highlight-10m {
+      background-color: rgba(255, 165, 0, 0.25) !important; /* orange */
+    }
+    .highlight-5m {
+      background-color: rgba(255, 0, 0, 0.25) !important;   /* red */
+    }
+
     @media (max-width: 900px) {
       body {
         padding: 12px;
@@ -292,7 +300,7 @@
     </div>
   </div>
 
-   <script>
+  <script>
     // Backend endpoint: your Web App URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbyMxe_s06Cwp4ZqJmDKFEjU5bjLlNZ2xC55I2BK7OZKAGRaQiWbCxqG73FyLaDxoIr6/exec';
     const API_TOKEN = null; // set if you configured TOKEN in Apps Script
@@ -311,10 +319,11 @@
     let bossesDynamic = [];
     let bossesFixed = [];
     let countdownIntervalId = null;
-    let pollIntervalId = null; // periodic re-fetch
+    let pollIntervalId = null;
+    let consecutiveFetchFailures = 0;
 
-    const HEAD_OFFSET_MS = 5 * 60 * 1000;      // 5 minutes before spawn
-    const EXPIRE_OFFSET_MS = 2 * 60 * 1000;    // 2 minutes after spawn
+    const HEAD_OFFSET_MS = 5 * 60 * 1000;   // 5 minutes before spawn
+    const EXPIRE_OFFSET_MS = 2 * 60 * 1000; // 2 minutes after spawn
 
     function formatCountdown(ms) {
       if (ms <= 0) return '00h 00m 00s';
@@ -432,14 +441,12 @@
       });
 
       bossesDynamic.sort((a, b) => {
-        // Treat bosses with no nextRespawn as bottom
         const ra = (a.nextRespawn ? a.nextRespawn.getTime() - now.getTime() : Infinity);
         const rb = (b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : Infinity);
 
         const aExpired = ra <= -EXPIRE_OFFSET_MS;
         const bExpired = rb <= -EXPIRE_OFFSET_MS;
 
-        // non-expired always above expired
         if (aExpired && !bExpired) return 1;
         if (!aExpired && bExpired) return -1;
 
@@ -532,18 +539,25 @@
 
     function updateHero() {
       const hero = document.getElementById('hero-text');
+      if (!hero) return;
+
       const all = bossesDynamic.concat(bossesFixed).filter(b => b.nextRespawn);
       if (!all.length) {
         hero.textContent = 'No upcoming respawns available.';
         return;
       }
+
       const now = new Date();
       all.forEach(b => {
-        b.msRemaining = b.nextRespawn ? b.nextRespawn.getTime() - now.getTime() : null;
+        b.msRemaining = b.nextRespawn
+          ? b.nextRespawn.getTime() - now.getTime()
+          : Infinity;
       });
+
       all.sort((a, b) => a.msRemaining - b.msRemaining);
       const next = all[0];
       const ms = next.msRemaining;
+
       hero.innerHTML = `
         <span class="hero-strong">${next.boss_name}</span>
         respawns in
@@ -562,6 +576,7 @@
         const now = new Date();
         let needsResort = false;
 
+        // Dynamic bosses: main countdown + head countdown + highlighting + resort after expire
         bossesDynamic.forEach((boss) => {
           if (!boss.nextRespawn) return;
 
@@ -580,10 +595,20 @@
           const mainEl = row.querySelector('[data-role="countdown-main"]');
           const headEl = row.querySelector('[data-role="countdown-head"]');
 
+          // Highlight logic based on head-to-boss-area
+          row.classList.remove('highlight-10m', 'highlight-5m');
+          const headMinutes = headMs / 60000;
+          if (headMinutes < 5) {
+            row.classList.add('highlight-5m');
+          } else if (headMinutes < 10) {
+            row.classList.add('highlight-10m');
+          }
+
           if (mainEl) mainEl.textContent = formatCountdown(msRemaining);
           if (headEl) headEl.textContent = formatCountdown(headMs);
         });
 
+        // Fixed bosses: only main countdown
         bossesFixed.forEach((boss) => {
           if (!boss.nextRespawn) return;
 
@@ -599,6 +624,7 @@
           renderTables();
         }
 
+        // Recompute hero banner every second
         updateHero();
       }, 1000);
     }
@@ -610,24 +636,30 @@
     }
 
     async function fetchBosses() {
-      showError('');
       try {
         const res = await fetch(API_URL);
         const data = await res.json();
         if (!data.ok) {
           throw new Error(data.error || 'Unknown error');
         }
+
         bossesRaw = data.bosses || [];
         enrichBosses();
         renderTables();
         startCountdownLoop();
+        updateHero(); // update banner immediately after each fetch
 
-        // start polling once
+        consecutiveFetchFailures = 0;
+        showError('');
+
         if (!pollIntervalId) {
           pollIntervalId = setInterval(fetchBosses, 30000); // every 30s
         }
       } catch (err) {
-        showError('Failed to load bosses: ' + err.message);
+        consecutiveFetchFailures += 1;
+        if (consecutiveFetchFailures >= 2) {
+          showError('Failed to load bosses: ' + err.message);
+        }
       }
     }
 
