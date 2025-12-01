@@ -170,6 +170,13 @@
       color: #bfdbfe;
     }
 
+    /* NEW: purple Guild badge */
+    .badge-guild {
+      border-color: #a855f7;
+      color: #e9d5ff;
+      background: #3b0764;
+    }
+
     .countdown {
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum" 1;
@@ -320,8 +327,8 @@
     let pollIntervalId = null;
     let consecutiveFetchFailures = 0;
 
-    const HEAD_OFFSET_MS = 5 * 60 * 1000;
-    const EXPIRE_OFFSET_MS = 2 * 60 * 1000;
+    const HEAD_OFFSET_MS = 5 * 60 * 1000;   // 5 minutes early travel
+    const EXPIRE_OFFSET_MS = 2 * 60 * 1000; // 2 minutes after spawn
 
     function formatCountdown(ms) {
       if (ms <= 0) return "00h 00m 00s";
@@ -401,10 +408,10 @@
       if (boss.respawn_type === "fixed") {
         const t1 = normalizeTimeValue(boss.fixed_time_1_24h);
         const t2 = normalizeTimeValue(boss.fixed_time_2_24h);
-        const c = [];
-        if (boss.fixed_day_1 && t1) c.push(nextWeeklyOccurrence(boss.fixed_day_1, t1, now));
-        if (boss.fixed_day_2 && t2) c.push(nextWeeklyOccurrence(boss.fixed_day_2, t2, now));
-        const good = c.filter(Boolean);
+        const candidates = [];
+        if (boss.fixed_day_1 && t1) candidates.push(nextWeeklyOccurrence(boss.fixed_day_1, t1, now));
+        if (boss.fixed_day_2 && t2) candidates.push(nextWeeklyOccurrence(boss.fixed_day_2, t2, now));
+        const good = candidates.filter(Boolean);
         if (!good.length) return null;
         return good.reduce((a, b) => (a < b ? a : b));
       }
@@ -415,11 +422,20 @@
     function enrichBosses() {
       bossesDynamic = [];
       bossesFixed = [];
+
       bossesRaw.forEach((b) => {
         const clone = { ...b };
+        // normalize respawn_type to avoid spacing/case issues
+        const type = (clone.respawn_type || "").toString().trim().toLowerCase();
+        clone.respawn_type = type;
+
         clone.nextRespawn = computeNextRespawn(clone);
-        if (clone.respawn_type === "dynamic") bossesDynamic.push(clone);
-        else if (clone.respawn_type === "fixed") bossesFixed.push(clone);
+
+        if (type === "dynamic") {
+          bossesDynamic.push(clone);
+        } else if (type === "fixed") {
+          bossesFixed.push(clone);
+        }
       });
     }
 
@@ -454,6 +470,7 @@
       const dynSorted = sortDynamicListForDisplay(bossesDynamic);
       const fixSorted = sortFixedListForDisplay(bossesFixed);
 
+      // dynamic bosses
       dynSorted.forEach((boss) => {
         const tr = document.createElement("tr");
         tr.dataset.bossName = boss.boss_name;
@@ -478,13 +495,20 @@
         dynBody.appendChild(tr);
       });
 
+      // fixed + guild bosses
       fixSorted.forEach((boss) => {
         const tr = document.createElement("tr");
         tr.dataset.bossName = boss.boss_name;
+
+        const notes = (boss.notes || "").trim().toLowerCase();
+        const isGuild = notes.includes("guild");
+        const badgeClass = isGuild ? "badge-guild" : "badge-fixed";
+        const badgeLabel = isGuild ? "Guild Boss" : "Fixed";
+
         tr.innerHTML = `
           <td class="td-name">
             ${boss.boss_name}
-            <span class="badge-respawn badge-fixed" style="margin-left:6px;">Fixed</span>
+            <span class="badge-respawn ${badgeClass}" style="margin-left:6px;">${badgeLabel}</span>
           </td>
           <td class="td-muted nowrap">${formatSchedule(boss)}</td>
           <td class="td-muted nowrap">
