@@ -537,33 +537,38 @@
       attachButtonHandlers();
     }
 
+    // HERO: pick the next FUTURE respawn only (ignore past ones)
     function updateHero() {
       const hero = document.getElementById('hero-text');
       if (!hero) return;
 
-      const all = bossesDynamic.concat(bossesFixed).filter(b => b.nextRespawn);
-      if (!all.length) {
+      const now = new Date();
+      const candidates = bossesDynamic.concat(bossesFixed).filter(b => b.nextRespawn);
+
+      let best = null;
+
+      candidates.forEach((b) => {
+        const ms = b.nextRespawn.getTime() - now.getTime();
+        if (ms <= 0) {
+          // already respawned, skip
+          return;
+        }
+        if (!best || ms < best.ms) {
+          best = { boss: b, ms };
+        }
+      });
+
+      if (!best) {
         hero.textContent = 'No upcoming respawns available.';
         return;
       }
 
-      const now = new Date();
-      all.forEach(b => {
-        b.msRemaining = b.nextRespawn
-          ? b.nextRespawn.getTime() - now.getTime()
-          : Infinity;
-      });
-
-      all.sort((a, b) => a.msRemaining - b.msRemaining);
-      const next = all[0];
-      const ms = next.msRemaining;
-
       hero.innerHTML = `
-        <span class="hero-strong">${next.boss_name}</span>
+        <span class="hero-strong">${best.boss.boss_name}</span>
         respawns in
-        <span class="hero-strong">${formatCountdown(ms)}</span>
+        <span class="hero-strong">${formatCountdown(best.ms)}</span>
         at
-        <span class="hero-strong">${formatDateTime(next.nextRespawn)}</span>
+        <span class="hero-strong">${formatDateTime(best.boss.nextRespawn)}</span>
       `;
     }
 
