@@ -488,6 +488,8 @@
 
       fixSorted.forEach((boss) => {
         const tr = document.createElement("tr");
+        tr.dataset.bossName = boss.boss_name; // important for countdown loop
+
         const notes = (boss.notes || "").trim().toLowerCase();
         const isGuild = notes.includes("guild");
         const badgeClass = isGuild ? "badge-guild" : "badge-fixed";
