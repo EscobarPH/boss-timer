@@ -5,7 +5,24 @@
   <title>DeadlySins Boss Timer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- FullCalendar CSS -->
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
   <style>
+    :root {
+      --bg-body: #ebebe8;
+      --bg-card: #ffffff;
+      --text-main: #2d2d2a;
+      --text-muted: #5e5e5a;
+      --border-color: #dcdcd9;
+      --primary: #4b5563; /* Muted slate for a 'dirty' look, or stick to blue? Let's keep blue but desaturated */
+      --primary: #3b82f6;
+      --primary-fg: #ffffff;
+      --accent: #f5f5f4;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -14,8 +31,8 @@
     }
 
     body {
-      background: #020617;
-      color: #e5e7eb;
+      background: var(--bg-body);
+      color: var(--text-main);
       padding: 24px;
       min-height: 100vh;
     }
@@ -29,11 +46,12 @@
       font-size: 28px;
       font-weight: 700;
       margin-bottom: 4px;
+      color: #111827;
     }
 
     .subtitle {
       font-size: 13px;
-      color: #9ca3af;
+      color: var(--text-muted);
       margin-bottom: 16px;
     }
 
@@ -44,25 +62,48 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: radial-gradient(circle at top left, #22c55e33, #0b1120);
-      border: 1px solid #16a34a55;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
       font-size: 13px;
-      color: #bbf7d0;
+      color: var(--text-main);
       min-height: 34px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
     .hero-label {
       font-weight: 600;
-      background: #16a34a22;
+      background: #dcfce7;
       padding: 3px 8px;
       border-radius: 999px;
       font-size: 12px;
-      color: #4ade80;
+      color: #166534;
     }
 
     .hero-strong {
       font-weight: 600;
-      color: #f9fafb;
+      color: #111827;
+    }
+
+    .view-switcher {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .view-switcher button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: white;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .view-switcher button.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
     }
 
     /* Cosmetic password bar */
@@ -70,13 +111,14 @@
       margin-bottom: 18px;
       padding: 8px 14px;
       border-radius: 10px;
-      background: #020617;
-      border: 1px solid #111827;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 12px;
-      color: #9ca3af;
+      color: var(--text-muted);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
 
     .auth-status {
@@ -84,39 +126,46 @@
     }
 
     .auth-input {
-      padding: 4px 8px;
+      padding: 4px 12px;
       border-radius: 999px;
-      border: 1px solid #1f2937;
-      background: #020617;
-      color: #e5e7eb;
+      border: 1px solid var(--border-color);
+      background: var(--accent);
+      color: var(--text-main);
       font-size: 12px;
       min-width: 120px;
     }
 
     .auth-input:focus {
       outline: none;
-      border-color: #2563eb;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
 
     .section-title {
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       margin: 18px 0 8px;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .table-card {
-      background: #020617;
-      border-radius: 14px;
-      border: 1px solid #111827;
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-      padding: 12px 16px 16px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      padding: 0;
       overflow: hidden;
+      margin-bottom: 24px;
     }
 
     /* Mobile fix (Option A) */
     .table-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      padding: 4px; /* Space for focus rings */
     }
     .table-scroll table {
       min-width: 950px;
@@ -125,33 +174,40 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     thead th {
       text-align: left;
-      padding: 8px 6px;
+      padding: 12px 16px;
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #6b7280;
-      border-bottom: 1px solid #1f2937;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--accent);
       white-space: nowrap;
     }
 
     tbody td {
-      padding: 7px 6px;
-      border-bottom: 1px solid #0f172a;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
+      color: var(--text-main);
     }
 
     tbody tr:last-child td {
       border-bottom: none;
     }
 
+    tbody tr:hover {
+      background-color: var(--accent);
+    }
+
     .td-name {
       font-weight: 600;
-      color: #e5e7eb;
+      color: #111827;
     }
 
     .td-muted {
@@ -165,24 +221,26 @@
       padding: 2px 8px;
       border-radius: 999px;
       font-size: 11px;
-      background: #0b1120;
-      border: 1px solid #1f2937;
+      font-weight: 500;
+      border: 1px solid transparent;
     }
 
     .badge-fixed {
-      border-color: #f97316;
-      color: #fed7aa;
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #ffedd5;
     }
 
     .badge-dynamic {
-      border-color: #3b82f6;
-      color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #dbeafe;
     }
 
     .badge-guild {
-      border-color: #a855f7;
-      color: #e9d5ff;
-      background: #3b0764;
+      background: #faf5ff;
+      color: #7e22ce;
+      border-color: #f3e8ff;
     }
 
     .countdown {
@@ -190,34 +248,46 @@
       font-feature-settings: "tnum" 1;
       font-size: 13px;
       font-weight: 600;
-      color: #e5e7eb;
+      color: #111827;
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .countdown-soft {
-      color: #9ca3af;
+      color: #6b7280;
       font-weight: 500;
     }
 
     .btn {
       border: none;
-      border-radius: 999px;
-      padding: 5px 10px;
+      border-radius: 6px;
+      padding: 6px 12px;
       font-size: 12px;
       cursor: pointer;
       font-weight: 500;
-      transition: background 0.12s ease, transform 0.06s ease;
+      transition: all 0.15s ease;
       white-space: nowrap;
     }
 
     .btn-primary {
-      background: #2563eb;
-      color: #f9fafb;
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 1px 2px 0 rgba(37, 99, 235, 0.3);
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
     }
 
     .btn-secondary {
-      background: #0f172a;
-      color: #e5e7eb;
-      border: 1px solid #1f2937;
+      background: white;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .btn-secondary:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
     }
 
     .controls {
@@ -228,8 +298,12 @@
 
     .error {
       margin-top: 8px;
-      font-size: 12px;
-      color: #fecaca;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #b91c1c;
+      background: #fef2f2;
+      border: 1px solid #fee2e2;
       white-space: pre-wrap;
     }
 
@@ -237,20 +311,83 @@
       text-align: center;
     }
 
-    .highlight-10m {
-      background-color: rgba(255, 165, 0, 0.25) !important;
+    .highlight-10m td {
+      background-color: #fffbeb !important; /* Amber 50 */
     }
 
-    .highlight-5m {
-      background-color: rgba(255, 0, 0, 0.25) !important;
+    .highlight-5m td {
+      background-color: #fef2f2 !important; /* Red 50 */
     }
 
     .controls-cell.controls-locked button {
-      opacity: 0.35;
+      opacity: 0.5;
       pointer-events: none;
       cursor: not-allowed;
+      filter: grayscale(100%);
+    }
+
+    /* Calendar Styling */
+    #calendar-wrapper {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .fc-event {
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .fc-toolbar-title {
+      font-size: 1.25rem !important;
+      font-weight: 700;
+    }
+    .fc-button {
+      font-size: 0.85rem !important;
+      font-weight: 500 !important;
+      text-transform: capitalize !important;
+    }
+
+    .calendar-locked-blur {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    .calendar-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.6);
+      z-index: 50;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 12px;
+    }
+    
+    .calendar-overlay-msg {
+      background: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      font-weight: 600;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .name-text {
+      transition: filter 0.3s;
+    }
+    .name-text.locked {
+      filter: blur(6px);
+      user-select: none;
+      opacity: 0.6;
     }
   </style>
+
 </head>
 
 <body>
@@ -265,6 +402,12 @@
       <span id="hero-text">Loading...</span>
     </div>
 
+    <!-- View Switcher -->
+    <div class="view-switcher">
+      <button id="btn-view-list" class="active">List View</button>
+      <button id="btn-view-calendar">Calendar View</button>
+    </div>
+
     <div id="auth-bar" class="auth-bar">
       <span id="auth-status" class="auth-status">
         Controls locked. Enter password to enable Death / Clear buttons on this device.
@@ -275,42 +418,55 @@
 
     <div id="error" class="error" style="display:none;"></div>
 
-    <!-- Dynamic bosses -->
-    <div class="section-title">Dynamic Respawns (Kill-Based)</div>
-    <div class="table-card" style="margin-bottom: 18px;">
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Boss Name</th>
-              <th>Respawn</th>
-              <th>Time of Death</th>
-              <th>Next Respawn</th>
-              <th>Countdown</th>
-              <th>Head to Boss Area</th>
-              <th class="center">Controls</th>
-            </tr>
-          </thead>
-          <tbody id="dynamic-body"></tbody>
-        </table>
+    <!-- LIST VIEW CONTAINER -->
+    <div id="view-list">
+      <!-- Dynamic bosses -->
+      <div class="section-title">Dynamic Respawns (Kill-Based)</div>
+      <div class="table-card" style="margin-bottom: 24px;">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Boss Name</th>
+                <th>Respawn</th>
+                <th>Time of Death</th>
+                <th>Next Respawn</th>
+                <th>Countdown</th>
+                <th>Head to Boss Area</th>
+                <th class="center">Controls</th>
+              </tr>
+            </thead>
+            <tbody id="dynamic-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Fixed bosses -->
+      <div class="section-title">Fixed Schedule Bosses</div>
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Boss Name</th>
+                <th>Schedule</th>
+                <th>Next Spawn</th>
+                <th>Countdown</th>
+              </tr>
+            </thead>
+            <tbody id="fixed-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
-
-    <!-- Fixed bosses -->
-    <div class="section-title">Fixed Schedule Bosses</div>
-    <div class="table-card">
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Boss Name</th>
-              <th>Schedule</th>
-              <th>Next Spawn</th>
-              <th>Countdown</th>
-            </tr>
-          </thead>
-          <tbody id="fixed-body"></tbody>
-        </table>
+    
+    <!-- CALENDAR VIEW CONTAINER -->
+    <div id="view-calendar" style="display: none;">
+      <div id="calendar-wrapper" style="position: relative;">
+        <div id="calendar-overlay" class="calendar-overlay" style="display: none;">
+           <div class="calendar-overlay-msg">🔒 Unlock to view schedule</div>
+        </div>
+        <div id="calendar"></div>
       </div>
     </div>
   </div>
@@ -333,6 +489,7 @@
     let bossesRaw = [];
     let bossesDynamic = [];
     let bossesFixed = [];
+    let calendar = null; // New
     let countdownIntervalId = null;
     let pollIntervalId = null;
     let consecutiveFetchFailures = 0;
@@ -459,6 +616,8 @@
         if (type === "dynamic") bossesDynamic.push(clone);
         else if (type === "fixed") bossesFixed.push(clone);
       });
+      
+      updateCalendar(); // New: update calendar when data changes
     }
 
     function sortDynamicListForDisplay(list) {
@@ -498,7 +657,7 @@
         tr.dataset.bossName = boss.boss_name;
 
         tr.innerHTML = `
-          <td class="td-name">${boss.boss_name}</td>
+          <td class="td-name"><span class="name-text">${boss.boss_name}</span></td>
           <td><span class="badge-respawn badge-dynamic">${boss.respawn_hours}h</span></td>
           <td class="td-muted">
             ${boss.last_death_iso ? formatDateTime(new Date(boss.last_death_iso)) : "—"}
@@ -530,7 +689,7 @@
 
         tr.innerHTML = `
           <td class="td-name">
-            ${boss.boss_name}
+            <span class="name-text">${boss.boss_name}</span>
             <span class="badge-respawn ${badgeClass}" style="margin-left:6px;">${badgeLabel}</span>
           </td>
           <td class="td-muted">${formatSchedule(boss)}</td>
@@ -708,6 +867,11 @@
       const statusEl = document.getElementById("auth-status");
       const inputEl = document.getElementById("auth-input");
       const buttonEl = document.getElementById("auth-button");
+      const btnCal = document.getElementById("btn-view-calendar");
+      
+      // Elements for calendar locking
+      const calEl = document.getElementById("calendar");
+      const calOverlay = document.getElementById("calendar-overlay");
 
       const now = Date.now();
       const lockUntil = Number(localStorage.getItem(LS_KEY_LOCKUNTIL) || 0);
@@ -718,6 +882,25 @@
         if (window.controlsUnlocked) td.classList.remove("controls-locked");
         else td.classList.add("controls-locked");
       });
+
+      // Blur boss names if locked
+      const nameTexts = document.querySelectorAll(".name-text");
+      nameTexts.forEach(el => {
+        if (window.controlsUnlocked) el.classList.remove("locked");
+        else el.classList.add("locked");
+      });
+
+      // Always show the button now
+      btnCal.style.display = "inline-block";
+
+      // Manage Calendar Blur/Overlay based on lock status
+      if (window.controlsUnlocked) {
+         if(calEl) calEl.classList.remove("calendar-locked-blur");
+         if(calOverlay) calOverlay.style.display = "none";
+      } else {
+         if(calEl) calEl.classList.add("calendar-locked-blur");
+         if(calOverlay) calOverlay.style.display = "flex";
+      }
 
       if (window.controlsUnlocked) {
         statusEl.textContent = "Controls unlocked on this device. Death / Clear buttons are active.";
@@ -796,8 +979,87 @@
       updateAuthUI();
     }
 
+    function switchView(viewName) {
+      document.getElementById("view-list").style.display = viewName === "list" ? "block" : "none";
+      document.getElementById("view-calendar").style.display = viewName === "calendar" ? "block" : "none";
+      
+      const btnList = document.getElementById("btn-view-list");
+      const btnCal = document.getElementById("btn-view-calendar");
+      
+      if (viewName === "list") {
+        btnList.classList.add("active");
+        btnCal.classList.remove("active");
+      } else {
+        btnList.classList.remove("active");
+        btnCal.classList.add("active");
+        if (!calendar) initCalendar();
+        else setTimeout(() => calendar.render(), 100); // render after display block
+      }
+    }
+
+    function initCalendar() {
+      const el = document.getElementById("calendar");
+      if (!el) return;
+      calendar = new FullCalendar.Calendar(el, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        eventTimeFormat: {
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        },
+        events: []
+      });
+      calendar.render();
+      updateCalendar();
+    }
+
+    function updateCalendar() {
+      if (!calendar) return;
+      
+      const events = [];
+      
+      // Dynamic bosses (Blue)
+      bossesDynamic.forEach(b => {
+        if (b.nextRespawn) {
+           events.push({
+             title: b.boss_name,
+             start: b.nextRespawn, // JS Date object
+             backgroundColor: '#3b82f6',
+             borderColor: '#2563eb'
+           });
+        }
+      });
+      
+      // Fixed bosses (Orange/Purple)
+      bossesFixed.forEach(b => {
+        if (b.nextRespawn) {
+           const isGuild = (b.notes || "").toLowerCase().includes("guild");
+           events.push({
+             title: b.boss_name,
+             start: b.nextRespawn,
+             backgroundColor: isGuild ? '#9333ea' : '#f97316',
+             borderColor: isGuild ? '#7e22ce' : '#ea580c'
+           });
+        }
+      });
+      
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setupAuth();
+      
+      // View Switcher Handlers
+      document.getElementById("btn-view-list").onclick = () => switchView("list");
+      document.getElementById("btn-view-calendar").onclick = () => switchView("calendar");
+      
       fetchBosses();
     });
   </script>
