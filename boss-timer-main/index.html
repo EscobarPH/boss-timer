@@ -923,11 +923,14 @@
     }
 
     function setupAuth() {
+      // Removed auto-unlock from localStorage so it always starts locked
+      /*
       try {
         if (localStorage.getItem(LS_KEY_UNLOCKED) === "1") {
           window.controlsUnlocked = true;
         }
       } catch {}
+      */
 
       const inputEl = document.getElementById("auth-input");
       const buttonEl = document.getElementById("auth-button");
@@ -943,7 +946,7 @@
 
         if (window.controlsUnlocked) {
           window.controlsUnlocked = false;
-          localStorage.removeItem(LS_KEY_UNLOCKED);
+          // localStorage.removeItem(LS_KEY_UNLOCKED); // No longer needed
           updateAuthUI();
           return;
         }
@@ -953,7 +956,7 @@
 
         if (val === ACCESS_PASSWORD) {
           window.controlsUnlocked = true;
-          localStorage.setItem(LS_KEY_UNLOCKED, "1");
+          // localStorage.setItem(LS_KEY_UNLOCKED, "1"); // No longer needed
           inputEl.value = "";
           localStorage.removeItem(LS_KEY_ATTEMPTS);
           localStorage.removeItem(LS_KEY_LOCKUNTIL);
